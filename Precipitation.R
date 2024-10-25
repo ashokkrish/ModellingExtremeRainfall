@@ -1,6 +1,10 @@
 # Set working directory
 #setwd("./Data")
 
+#Read the dataset
+input.path <- "C:\\Users\\ashok\\Desktop\\Collaboration with Prof Manos\\Project_ModellingRainfall\\Publication data\\Data"
+setwd(input.path)
+
 # Load the required libraries
 
 library(MASS)
@@ -10,6 +14,7 @@ library(lubridate)
 library(openxlsx)
 library(fitdistrplus)
 library(extRemes)
+library(evd)
 
 options(scipen = 999) # options(scipen = 0)
 
@@ -25,34 +30,44 @@ DescStats_table <- data.frame(
   SMS31 = numeric(9)
 )
 
-# Data frame to store modelling results
-Model_table <- data.frame(
-  Statistic = c("Shape Parameter Estimate", 
-                "Shape Parameter SE", 
-                "Rate Parameter Estimate", 
-                "Rate Parameter SE", 
-                "AIC"),
-  MMS01 = numeric(5),
-  MMS31 = numeric(5),
-  OMS11 = numeric(5),
-  SMS31 = numeric(5)
+# GEV Distribution: parameter estimates
+GEV_table <- data.frame(
+  Estimate = c("Location Parameter", 
+                "Scale Parameter", 
+                "Shape Parameter"),
+  MMS01 = numeric(3),
+  MMS31 = numeric(3),
+  OMS11 = numeric(3),
+  SMS31 = numeric(3)
+)
+
+# Gamma Distribution: parameter estimates
+Gamma_table <- data.frame(
+  Estimate = c("Shape Parameter", 
+                   "Shape Parameter SE", 
+                   "Rate Parameter", 
+                   "Rate Parameter SE"),
+  MMS01 = numeric(4),
+  MMS31 = numeric(4),
+  OMS11 = numeric(4),
+  SMS31 = numeric(4)
 )
 
 # Data frame to store AIC values from various probability distributions
 AIC_table <- data.frame(
-  Statistic = c("Gamma AIC", 
-                "Weibill AIC", 
-                "Normal AIC",
-                "GEV AIC",
-                "Gumbel AIC"
-                ),
+  Distribution = c("Gamma", 
+                "Weibull", 
+                "Normal",
+                "GEV",
+                "Gumbel"
+  ),
   MMS01 = numeric(5),
   MMS31 = numeric(5),
   OMS11 = numeric(5),
   SMS31 = numeric(5)
 )
 
-# Functions to handle the plotting of rainfall data
+# Functions to plot rainfall data
 
 createTimeSeriesPlot <- function(station_data, station) {
   plot(
@@ -72,7 +87,7 @@ createTimeSeriesPlot <- function(station_data, station) {
   #              by = "year")
   # 
   # axis(1, at = years, labels = format(years, "%Y"), las = 2)  # Rotate labels if needed
-
+  
   # # Add the custom x-axis with more frequent labels (e.g., yearly)
   axis(1, at = seq(from = min(station_data$DATE),
                    to = max(station_data$DATE),
@@ -83,7 +98,7 @@ createTimeSeriesPlot <- function(station_data, station) {
 }
 
 createAnnualMaximumPlot <- function(annmax, station) {
-
+  
   plot(
     annmax$Year, 
     annmax$AnnualMaximum, 
@@ -95,8 +110,8 @@ createAnnualMaximumPlot <- function(annmax, station) {
     font.lab = 2,  # Bold x and y axis titles
     col = "darkblue",
     lwd = 1.5,
-    )
-
+  )
+  
   axis(1, at = seq(from = min(annmax$Year),
                    to = max(annmax$Year)))
 }
@@ -116,12 +131,12 @@ for (station in stations) {
   # Clean up the data 
   station_data <- station_data[,-1]
   names(station_data)[2] <- 'Rain'
- 
+  
   # Add three additional columns to the data frame
   station_data <- station_data %>% 
     mutate(DATE = ymd(DATE)) %>% 
     mutate_at(vars(DATE), list(year = year, month = month, day = day))
-
+  
   # Group annual data and find the maximum rainfall for each year
   annmax <- aggregate(station_data$Rain, by = list(station_data$year), max, na.rm=TRUE)
   names(annmax) <- c("Year", "AnnualMaximum")
@@ -132,9 +147,9 @@ for (station in stations) {
   
   # Filter data to include only non-zero rainfall values
   non_zero_rain <- station_data$Rain[station_data$Rain > 0]
-
+  
   #print(hist(non_zero_rain))
-
+  
   # Step 1: Fit various probability distributions to the non-zero rainfall data using MLE
   fitGamma <- fitdist(non_zero_rain, distr = "gamma", method = "mle")
   fitWeibull <- fitdist(non_zero_rain, distr = "weibull", method = "mle")
@@ -142,56 +157,77 @@ for (station in stations) {
   fitGEV <- fevd(non_zero_rain, type = "GEV", method = "MLE")
   fitGumbel <- fevd(non_zero_rain, type = "Gumbel", method = "MLE")
   #fitExponential <- fevd(non_zero_rain, type = "Exponential", method = "MLE")
-
+  
   # print(fitGamma)
   # print(summary(fitGamma))
   # print(fitWeibull)
   # print(fitNormal)
-  #Assign the summary of an fevd object to a variable
+  
+  ## Assign the summary of an fevd object to a variable
   summaryGEV <- summary(fitGEV, silent = TRUE)
+  #print(summaryGEV$par)
+  
+  ## Standard Error Estimates for the GEV distribution
+  # loc_se <- summaryGEV$se.theta[["location"]]
+  # scale_se <- summaryGEV$se.theta[["scale"]]
+  # shape_se <- summaryGEV$se.theta[["shape"]]
+  # 
+  # print(c(loc_se, scale_se, shape_se))
+  
   summaryGumbel <- summary(fitGumbel, silent = TRUE)
+  
+  # plot(fitGEV)
+  # plot(fitGEV, "trace")
+  # return.level(fitGEV)
+  # return.level(fitGEV, do.ci=TRUE)
+  # ci(fitGEV, return.period=c(2,20,100))
 
-  plot(fitGamma, demp = TRUE)
+  # plot(fitGamma, demp = TRUE)
   # plot(fitGamma, histo = FALSE, demp = TRUE)
   # cdfcomp(fitGamma, addlegend=FALSE)
   # denscomp(fitGamma, addlegend=FALSE)
   # ppcomp(fitGamma, addlegend=FALSE)
   # qqcomp(fitGamma, addlegend=FALSE)
 
-  # # Display the fitted parameters and AIC value
-  # print(paste("Shape Parameter Estimate:", fitGamma$estimate['shape']))
-  # print(paste("Shape Parameter SE:", fitGamma$sd['shape']))
-  # print(paste("Rate Parameter Estimate:", fitGamma$estimate['rate']))
-  # print(paste("Rate Parameter SE:", fitGamma$sd['rate']))
-  # print(paste("AIC for Gamma fit:", AIC(fitGamma)))
+  # constraints <- list(
+  #   mean = mean(non_zero_rain),  # mean of the rainfall data
+  #   var = var(non_zero_rain)     # variance of the rainfall data
+  # )
+  # 
+  # # Fit a Maximum Entropy model
+  # maxent_model <- maxent(constraints, non_zero_rain)
   
+  # # Output empirical probabilities
+  # print(maxent_model$probabilities)
   
-  
-  
-  
-
   # Store relevant model results into the table
-  Model_table[, station] <- c(
+  
+  GEV_table[, station] <- round(c(
+    summaryGEV$par[[1]],
+    summaryGEV$par[[2]],
+    summaryGEV$par[[3]]
+  ), 4)
+  
+  Gamma_table[, station] <- round(c(
     fitGamma$estimate['shape'],
     fitGamma$sd['shape'],
     fitGamma$estimate['rate'],
-    fitGamma$sd['rate'],
-    AIC(fitGamma)
-  )
+    fitGamma$sd['rate']
+  ), 4)
   
-  AIC_table[, station] <- c(
+  AIC_table[, station] <- round(c(
     AIC(fitGamma),
     AIC(fitWeibull),
     AIC(fitNormal),
     summaryGEV$AIC,
     summaryGumbel$AIC
-  )
-
+  ), 1)
+  
   # Extract statistics using psych::describe
   stats <- psych::describe(station_data$Rain)
   stats$Q1 <- summary(station_data$Rain)[[2]]
   stats$Q3 <- summary(station_data$Rain)[[5]]
-    
+  
   # Store relevant summary statistics into the table
   DescStats_table[, station] <- c(
     stats$mean,
@@ -204,7 +240,7 @@ for (station in stations) {
     stats$Q3,
     stats$max
   )
-
+  
   # First, display the plot in the RStudio console
   createTimeSeriesPlot(station_data, station)
   #createAnnualMaximumPlot(annmax, station)
@@ -226,11 +262,12 @@ for (station in stations) {
 
 # View summary statistics and model results for all stations
 print(DescStats_table)
-print(Model_table)
+print(GEV_table)
+print(Gamma_table)
 print(AIC_table)
 
 # Write the table to an Excel file
- write.xlsx(DescStats_table, file = "Rainfall_Descriptive_Statistics.xlsx", rowNames = FALSE)
- write.xlsx(Model_table, file = "Model_table.xlsx", rowNames = FALSE)
- write.xlsx(AIC_table, file = "AIC_table.xlsx", rowNames = FALSE)
- 
+write.xlsx(DescStats_table, file = "Rainfall_Descriptive_Statistics.xlsx", rowNames = FALSE)
+write.xlsx(GEV_table, file = "GEV_table.xlsx", rowNames = FALSE)
+write.xlsx(Gamma_table, file = "Gamma_table.xlsx", rowNames = FALSE)
+write.xlsx(AIC_table, file = "AIC_table.xlsx", rowNames = FALSE)
