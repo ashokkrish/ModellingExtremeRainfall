@@ -19,7 +19,7 @@ library(evd)
 options(scipen = 999) # options(scipen = 0)
 
 # List of station names
-stations <- c("MMS01", "MMS31", "OMS11", "SMS31") # )#
+stations <- c("MMS01", "MMS31", "OMS11", "SMS31") #)# 
 
 # Data frame to store summary statistics
 DescStats_table <- data.frame(
@@ -244,14 +244,30 @@ for (station in stations) {
   # First, display the plot in the RStudio console
   createTimeSeriesPlot(station_data, station)
   #createAnnualMaximumPlot(annmax, station)
-  
+
   # Save the plot as a PNG file 
   png_filename <- paste0(station, "_Rainfall_Plot.png")
-  png(file = png_filename, width = 1500, height = 1000, res = 300)  # Full resolution PNG (e.g., 300 DPI)
+  png(file = png_filename, width = 1600, height = 1200, res = 300)  # Full resolution PNG (e.g., 300 DPI)
+
+  # Adjust margins to minimize whitespace
+  par(mar = c(4, 4, 2, 0.5))  # Change numbers as needed (bottom, left, top, right)
   
   # Call the same plotting function to save the plot to the PNG
   createTimeSeriesPlot(station_data, station)
   
+  # Close the PNG device (save the plot)
+  dev.off()
+  
+  # Save the plot as a EPS file
+  eps_filename <- paste0(station, "_Rainfall_Plot.eps")
+  postscript(file = eps_filename, width = 7, height = 5, paper = "special", onefile = FALSE, horizontal = FALSE)
+
+  # Adjust margins to minimize whitespace
+  par(mar = c(4, 4, 2, 0.5))  # Change numbers as needed (bottom, left, top, right)
+  
+  # Call the same plotting function to save the plot to the PNG
+  createTimeSeriesPlot(station_data, station)
+
   # Close the PNG device (save the plot)
   dev.off()
   
