@@ -15,6 +15,7 @@ library(openxlsx)
 library(fitdistrplus)
 library(extRemes)
 library(evd)
+library(leaflet)
 
 options(scipen = 999) # options(scipen = 0)
 
@@ -116,6 +117,21 @@ createAnnualMaximumPlot <- function(annmax, station) {
                    to = max(annmax$Year)))
 }
 
+locations <- read.csv("locations.csv", sep = ";", header=TRUE, dec=",")
+head(locations)
+
+# Chalkidiki <- leaflet() %>%
+#   addTiles() %>%  # Add default OpenStreetMap map tiles
+#   addMarkers(lng=23.82649311, lat=40.5117842, popup="Study Area")
+# Chalkidiki
+
+# leaflet(data = locations) %>% addTiles() %>%
+#   addMarkers(~lon.., ~lat, popup = ~as.character(Name), label = ~as.character(Name))
+
+# Leaflet map locating the four stations
+leaflet(data = locations) %>% addTiles() %>%
+  addMarkers(~lon.., ~lat, popup = ~as.character(Name), label = ~as.character(Name), labelOptions = labelOptions(noHide = T))
+
 # Loop through each station
 for (station in stations) {
   
@@ -127,11 +143,12 @@ for (station in stations) {
   
   # Format the DATE column
   station_data$DATE <- as.Date(station_data$DATE, format = '%d/%m/%Y')
-  
-  # Clean up the data 
+
+  # Clean up the data by removing the first column
   station_data <- station_data[,-1]
+  #print(dim(station_data))
   names(station_data)[2] <- 'Rain'
-  
+
   # Add three additional columns to the data frame
   station_data <- station_data %>% 
     mutate(DATE = ymd(DATE)) %>% 
