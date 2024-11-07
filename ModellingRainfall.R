@@ -45,9 +45,9 @@ GEV_table <- data.frame(
 # Gamma Distribution: parameter estimates
 Gamma_table <- data.frame(
   Estimate = c("Shape Parameter", 
-                   "Shape Parameter SE", 
-                   "Rate Parameter", 
-                   "Rate Parameter SE"),
+               "Shape Parameter SE", 
+               "Rate Parameter", 
+               "Rate Parameter SE"),
   MMS01 = numeric(4),
   MMS31 = numeric(4),
   OMS11 = numeric(4),
@@ -56,11 +56,11 @@ Gamma_table <- data.frame(
 
 # Data frame to store AIC values from various probability distributions
 AIC_table <- data.frame(
-  Distribution = c("Gamma", 
-                "Weibull", 
-                "Normal",
-                "GEV",
-                "Gumbel"
+  Distribution = c("Gamma",
+                   "Normal",
+                   "Gumbel", 
+                   "Weibull",
+                   "GEV"
   ),
   MMS01 = numeric(5),
   MMS31 = numeric(5),
@@ -76,7 +76,7 @@ createTimeSeriesPlot <- function(station_data, station) {
     station_data$Rain, 
     type = "l", 
     xlab = "Year", 
-    ylab = "Precipitation (mm)", 
+    ylab = "Rainfall (mm)", 
     main = paste("Trend in Daily Rainfall (mm) at station", station),
     xaxt = "n",  # Disable the default x-axis initially
     font.lab = 2  # Bold x and y axis titles
@@ -99,13 +99,12 @@ createTimeSeriesPlot <- function(station_data, station) {
 }
 
 createAnnualMaximumPlot <- function(annmax, station) {
-  
   plot(
     annmax$Year, 
     annmax$AnnualMaximum, 
     type = "l",
     xlab = "Year",
-    ylab = "Maximum annual precipitation (mm)",
+    ylab = "Maximum annual rainfall (mm)",
     main = paste("Maximum annual Rainfall (mm) at station", station),
     xaxt = "n",  # Disable the default x-axis initially
     font.lab = 2,  # Bold x and y axis titles
@@ -118,7 +117,7 @@ createAnnualMaximumPlot <- function(annmax, station) {
 }
 
 locations <- read.csv("locations.csv", sep = ";", header=TRUE, dec=",")
-head(locations)
+#head(locations)
 
 # Chalkidiki <- leaflet() %>%
 #   addTiles() %>%  # Add default OpenStreetMap map tiles
@@ -163,7 +162,7 @@ for (station in stations) {
   write.xlsx(annmax, file = annmax_file_name, rowNames = FALSE)
   
   # Filter data to include only non-zero rainfall values
-  non_zero_rain <- station_data$Rain[station_data$Rain > 0]
+  non_zero_rain <- station_data$Rain[station_data$Rain > 1]
   
   #print(hist(non_zero_rain))
   
@@ -184,12 +183,12 @@ for (station in stations) {
   summaryGEV <- summary(fitGEV, silent = TRUE)
   #print(summaryGEV$par)
   
-  ## Standard Error Estimates for the GEV distribution
-  # loc_se <- summaryGEV$se.theta[["location"]]
-  # scale_se <- summaryGEV$se.theta[["scale"]]
-  # shape_se <- summaryGEV$se.theta[["shape"]]
-  # 
-  # print(c(loc_se, scale_se, shape_se))
+  # Standard Error Estimates for the GEV distribution
+  loc_se <- summaryGEV$se.theta[["location"]]
+  scale_se <- summaryGEV$se.theta[["scale"]]
+  shape_se <- summaryGEV$se.theta[["shape"]]
+
+  print(c(loc_se, scale_se, shape_se))
   
   summaryGumbel <- summary(fitGumbel, silent = TRUE)
   
@@ -234,10 +233,10 @@ for (station in stations) {
   
   AIC_table[, station] <- round(c(
     AIC(fitGamma),
-    AIC(fitWeibull),
     AIC(fitNormal),
-    summaryGEV$AIC,
-    summaryGumbel$AIC
+    summaryGumbel$AIC,
+    AIC(fitWeibull),
+    summaryGEV$AIC
   ), 1)
   
   # Extract statistics using psych::describe
