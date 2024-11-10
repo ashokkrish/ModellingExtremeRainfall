@@ -1,4 +1,4 @@
-***ModellingExtremeRainfall***
+**ModellingExtremeRainfall**
 
 This study analyzes extreme rainfall events in the mining-metallurgical region of NE Chalkidiki, Greece, using data from four meteorological stations recorded between 2006 and 2021. The Maximum Entropy method was applied to estimate the parameters and empirical probabilities of various probability distributions, identifying the optimal fit for accurate risk prediction. Model evaluation was conducted using Akaike’s Information Criterion (AIC).
 
